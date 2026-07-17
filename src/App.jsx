@@ -6,7 +6,6 @@ function MemoCard({ memo, onSave, onEdit, onDelete }) {
   const [tempTitle, setTempTitle] = useState(memo.title);
   const [tempContent, setTempContent] = useState(memo.content);
   
-  // 편집 모드로 들어올 때 로컬 상태 동기화
   useEffect(() => {
     if (memo.isEditing) {
       setTempTitle(memo.title);
@@ -31,7 +30,6 @@ function MemoCard({ memo, onSave, onEdit, onDelete }) {
       <div className={`card card-glass h-100 color-${memo.colorIndex} ${memo.isEditing ? 'editing' : ''}`}>
         <div className="card-body d-flex flex-column justify-content-between p-4">
           
-          {/* 콘텐츠 영역 */}
           <div className="mb-4">
             {memo.isEditing ? (
               <>
@@ -63,7 +61,6 @@ function MemoCard({ memo, onSave, onEdit, onDelete }) {
             )}
           </div>
 
-          {/* 푸터 영역 */}
           <div className="d-flex align-items-center justify-content-between pt-3 border-top border-secondary-subtle">
             <span className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '0.75rem' }}>
               <i className="bi bi-clock"></i>
@@ -110,40 +107,166 @@ function MemoCard({ memo, onSave, onEdit, onDelete }) {
 }
 
 function App() {
-  // 로컬 스토리지에서 메모 불러오기
-  const [memos, setMemos] = useState(() => {
-    const saved = localStorage.getItem('memos-flow');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: '1',
-        title: '💡 MEMO FLOW에 오신 것을 환영합니다!',
-        content: '이 앱은 부트스트랩(Bootstrap 5)과 글래스모피즘 디자인이 융합된 메모장입니다.\n\n오른쪽 상단의 [새 메모] 버튼을 누르면 새로운 메모를 생성하고 바로 입력할 수 있습니다.',
-        colorIndex: 0,
-        createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
-        updatedAt: new Date().toLocaleString('ko-KR', { hour12: false }),
-        isEditing: false
-      },
-      {
-        id: '2',
-        title: '✨ 부트스트랩 디자인 적용 완료',
-        content: '1. 반응형 카드 그리드 레이아웃을 제공합니다.\n2. 실시간 검색 기능을 제공하여 메모의 제목과 내용에서 빠르게 찾을 수 있습니다.\n3. 브라우저의 LocalStorage에 안전하게 자동 저장됩니다.',
-        colorIndex: 1,
-        createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
-        updatedAt: new Date().toLocaleString('ko-KR', { hour12: false }),
-        isEditing: false
-      }
-    ];
+  // --- [인증 및 가상 DB 상태 관리] ---
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem('users-flow');
+    return saved ? JSON.parse(saved) : [];
   });
 
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('current-user-flow');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // 회원가입 및 로그인 폼 상태
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [loginId, setLoginId] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  const [registerId, setRegisterId] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // --- [메모 데이터 상태 관리] ---
+  const [memos, setMemos] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // memos 상태 변경 시 로컬 스토리지에 저장
+  // 유저 정보 변경 시 로컬스토리지 동기화
   useEffect(() => {
-    localStorage.setItem('memos-flow', JSON.stringify(memos));
-  }, [memos]);
+    localStorage.setItem('users-flow', JSON.stringify(users));
+  }, [users]);
 
-  // 새 메모 추가
+  // 로그인 상태 변경 시 로컬스토리지 동기화 및 회원별 메모 로드
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('current-user-flow', JSON.stringify(currentUser));
+      // 로그인 유저 전용 가상 데이터베이스(메모) 로드
+      const savedMemos = localStorage.getItem(`memos-flow_${currentUser.id}`);
+      if (savedMemos) {
+        setMemos(JSON.parse(savedMemos));
+      } else {
+        // 첫 로그인 시 기본 안내 템플릿 로드
+        const defaultMemos = [
+          {
+            id: '1',
+            title: `💡 ${currentUser.name}님의 MEMO FLOW에 오신 것을 환영합니다!`,
+            content: '이 앱은 회원별로 개인 데이터베이스(LocalStorage)가 독립적으로 구성됩니다.\n\n오른쪽 상단의 [새 메모] 버튼을 누르면 새로운 메모를 생성하고 바로 입력할 수 있습니다.',
+            colorIndex: 0,
+            createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
+            updatedAt: new Date().toLocaleString('ko-KR', { hour12: false }),
+            isEditing: false
+          },
+          {
+            id: '2',
+            title: '🔐 회원 맞춤형 기능 안내',
+            content: '로그아웃 후 다른 아이디로 회원가입 및 로그인하면 완전히 다른 메모 리스트가 나타납니다.\n\n개인적인 정보와 아이디어를 안전하게 기록해 보세요.',
+            colorIndex: 1,
+            createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
+            updatedAt: new Date().toLocaleString('ko-KR', { hour12: false }),
+            isEditing: false
+          }
+        ];
+        setMemos(defaultMemos);
+        localStorage.setItem(`memos-flow_${currentUser.id}`, JSON.stringify(defaultMemos));
+      }
+    } else {
+      localStorage.removeItem('current-user-flow');
+      setMemos([]);
+    }
+  }, [currentUser]);
+
+  // 메모 내용 바뀔 때마다 유저별 데이터베이스에 자동 동기화
+  useEffect(() => {
+    if (currentUser && memos.length >= 0) {
+      localStorage.setItem(`memos-flow_${currentUser.id}`, JSON.stringify(memos));
+    }
+  }, [memos, currentUser]);
+
+  // --- [회원 기능 핸들러] ---
+  const handleRegister = (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    if (!registerId.trim() || !registerName.trim() || !registerPassword || !registerConfirmPassword) {
+      setErrorMessage('모든 항목을 입력해 주세요.');
+      return;
+    }
+
+    if (users.some(user => user.id === registerId.trim())) {
+      setErrorMessage('이미 존재하는 아이디입니다.');
+      return;
+    }
+
+    if (registerPassword !== registerConfirmPassword) {
+      setErrorMessage('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    const newUser = {
+      id: registerId.trim(),
+      name: registerName.trim(),
+      password: registerPassword
+    };
+
+    setUsers(prev => [...prev, newUser]);
+    setSuccessMessage('회원가입이 완료되었습니다! 로그인해 주세요.');
+    
+    // 회원가입 폼 초기화
+    setRegisterId('');
+    setRegisterName('');
+    setRegisterPassword('');
+    setRegisterConfirmPassword('');
+    
+    // 1.5초 후 로그인 화면으로 전환
+    setTimeout(() => {
+      setIsRegistering(false);
+      setSuccessMessage('');
+    }, 1500);
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    
+    if (!loginId.trim() || !loginPassword) {
+      setErrorMessage('아이디와 비밀번호를 입력해 주세요.');
+      return;
+    }
+
+    const user = users.find(u => u.id === loginId.trim() && u.password === loginPassword);
+
+    if (!user) {
+      setErrorMessage('아이디 또는 비밀번호가 올바르지 않습니다.');
+      return;
+    }
+
+    // 로그인 성공
+    setCurrentUser({
+      id: user.id,
+      name: user.name
+    });
+    
+    // 로그인 폼 초기화
+    setLoginId('');
+    setLoginPassword('');
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('로그아웃 하시겠습니까?')) {
+      setCurrentUser(null);
+      setSearchTerm('');
+    }
+  };
+
+  // --- [메모 기능 핸들러] ---
   const handleAddMemo = () => {
+    if (!currentUser) return;
+    
     const newMemo = {
       id: Date.now().toString(),
       title: '',
@@ -151,20 +274,16 @@ function App() {
       colorIndex: Math.floor(Math.random() * 5),
       createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
       updatedAt: new Date().toLocaleString('ko-KR', { hour12: false }),
-      isEditing: true, // 즉시 편집 모드로 시작
+      isEditing: true,
     };
 
-    // 다른 편집 중이던 메모는 자동으로 저장 모드 해제
     setMemos(prev => [
       newMemo,
       ...prev.map(m => m.isEditing ? { ...m, isEditing: false } : m)
     ]);
-    
-    // 새 메모 작성을 돕기 위해 검색어는 초기화
     setSearchTerm('');
   };
 
-  // 메모 저장
   const handleSaveMemo = (id, editedTitle, editedContent) => {
     setMemos(prev => prev.map(memo => {
       if (memo.id === id) {
@@ -184,7 +303,6 @@ function App() {
     }));
   };
 
-  // 메모 수정 모드 진입
   const handleEditMemo = (id) => {
     setMemos(prev => prev.map(memo => {
       if (memo.id === id) {
@@ -194,14 +312,12 @@ function App() {
     }));
   };
 
-  // 메모 삭제
   const handleDeleteMemo = (id) => {
     if (window.confirm("이 메모를 삭제하시겠습니까?")) {
       setMemos(prev => prev.filter(memo => memo.id !== id));
     }
   };
 
-  // 검색 필터링 적용
   const filteredMemos = memos.filter(memo => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -210,6 +326,168 @@ function App() {
     );
   });
 
+  // --- [뷰 렌더링 분기] ---
+  if (!currentUser) {
+    return (
+      <div className="container d-flex align-items-center justify-content-center min-vh-100 py-5">
+        <div className="card card-glass p-5 w-100 animate-card" style={{ maxWidth: '450px' }}>
+          
+          <div className="text-center mb-4">
+            <i className="bi bi-journal-bookmark-fill fs-1 text-primary" style={{ filter: 'drop-shadow(0 0 10px rgba(99, 102, 241, 0.4))' }}></i>
+            <h2 className="brand-gradient mt-2 mb-1">MEMO FLOW</h2>
+            <p className="text-secondary" style={{ fontSize: '0.9rem' }}>나만의 생각과 계획을 기록하고 보관하세요.</p>
+          </div>
+
+          {errorMessage && (
+            <div className="alert alert-danger py-2 px-3 mb-3 border-0 rounded-3 text-center" style={{ fontSize: '0.85rem', background: 'rgba(220, 53, 69, 0.15)', color: '#f87171' }}>
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="alert alert-success py-2 px-3 mb-3 border-0 rounded-3 text-center" style={{ fontSize: '0.85rem', background: 'rgba(25, 135, 84, 0.15)', color: '#34d399' }}>
+              <i className="bi bi-check-circle-fill me-2"></i>
+              {successMessage}
+            </div>
+          )}
+
+          {!isRegistering ? (
+            // --- 로그인 폼 ---
+            <form onSubmit={handleLogin}>
+              <div className="mb-3">
+                <label className="form-label text-secondary fw-semibold small">아이디</label>
+                <div className="input-group">
+                  <span className="input-group-text form-glass border-end-0"><i className="bi bi-person-fill text-muted"></i></span>
+                  <input
+                    type="text"
+                    className="form-control form-glass border-start-0"
+                    placeholder="아이디를 입력하세요"
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="form-label text-secondary fw-semibold small">비밀번호</label>
+                <div className="input-group">
+                  <span className="input-group-text form-glass border-end-0"><i className="bi bi-lock-fill text-muted"></i></span>
+                  <input
+                    type="password"
+                    className="form-control form-glass border-start-0"
+                    placeholder="비밀번호를 입력하세요"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary w-100 py-2.5 fw-bold mb-3 shadow" style={{ borderRadius: '12px' }}>
+                로그인
+              </button>
+
+              <div className="text-center mt-3">
+                <span className="text-secondary small">아직 회원이 아니신가요? </span>
+                <button
+                  type="button"
+                  className="btn btn-link p-0 text-primary fw-semibold small text-decoration-none"
+                  onClick={() => {
+                    setIsRegistering(true);
+                    setErrorMessage('');
+                    setSuccessMessage('');
+                  }}
+                >
+                  회원가입
+                </button>
+              </div>
+            </form>
+          ) : (
+            // --- 회원가입 폼 ---
+            <form onSubmit={handleRegister}>
+              <div className="mb-3">
+                <label className="form-label text-secondary fw-semibold small">아이디</label>
+                <div className="input-group">
+                  <span className="input-group-text form-glass border-end-0"><i className="bi bi-person-plus-fill text-muted"></i></span>
+                  <input
+                    type="text"
+                    className="form-control form-glass border-start-0"
+                    placeholder="사용할 아이디"
+                    value={registerId}
+                    onChange={(e) => setRegisterId(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label text-secondary fw-semibold small">이름</label>
+                <div className="input-group">
+                  <span className="input-group-text form-glass border-end-0"><i className="bi bi-card-text text-muted"></i></span>
+                  <input
+                    type="text"
+                    className="form-control form-glass border-start-0"
+                    placeholder="사용자 이름"
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label text-secondary fw-semibold small">비밀번호</label>
+                <div className="input-group">
+                  <span className="input-group-text form-glass border-end-0"><i className="bi bi-lock-fill text-muted"></i></span>
+                  <input
+                    type="password"
+                    className="form-control form-glass border-start-0"
+                    placeholder="비밀번호"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="form-label text-secondary fw-semibold small">비밀번호 확인</label>
+                <div className="input-group">
+                  <span className="input-group-text form-glass border-end-0"><i className="bi bi-shield-lock-fill text-muted"></i></span>
+                  <input
+                    type="password"
+                    className="form-control form-glass border-start-0"
+                    placeholder="비밀번호 확인"
+                    value={registerConfirmPassword}
+                    onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary w-100 py-2.5 fw-bold mb-3 shadow" style={{ borderRadius: '12px' }}>
+                가입하기
+              </button>
+
+              <div className="text-center mt-3">
+                <span className="text-secondary small">이미 계정이 있으신가요? </span>
+                <button
+                  type="button"
+                  className="btn btn-link p-0 text-primary fw-semibold small text-decoration-none"
+                  onClick={() => {
+                    setIsRegistering(false);
+                    setErrorMessage('');
+                    setSuccessMessage('');
+                  }}
+                >
+                  로그인으로 이동
+                </button>
+              </div>
+            </form>
+          )}
+
+        </div>
+      </div>
+    );
+  }
+
+  // --- 로그인 이후 메인 화면 ---
   return (
     <div className="container py-5">
       {/* 헤더 영역 */}
@@ -243,6 +521,22 @@ function App() {
             <i className="bi bi-plus-lg fs-5"></i>
             <span>새 메모</span>
           </button>
+          
+          {/* 회원 프로필 & 로그아웃 영역 */}
+          <div className="d-flex align-items-center justify-content-between gap-3 px-3 py-2 card-glass ms-0 ms-sm-2" style={{ borderRadius: '12px' }}>
+            <span className="text-secondary-emphasis fw-semibold small d-flex align-items-center gap-1.5">
+              <i className="bi bi-person-circle text-primary"></i>
+              <span>{currentUser.name}님</span>
+            </span>
+            <button 
+              className="btn btn-sm btn-outline-danger px-2.5 py-1 d-flex align-items-center gap-1"
+              onClick={handleLogout}
+              style={{ borderRadius: '8px', fontSize: '0.8rem' }}
+            >
+              <i className="bi bi-box-arrow-right"></i>
+              <span>로그아웃</span>
+            </button>
+          </div>
         </div>
       </header>
 
