@@ -1,0 +1,181 @@
+/* index.css - Global Styles with Bootstrap Customization */
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
+  
+  /* Custom Accent Colors */
+  --accent-indigo: #6366f1;
+  --accent-purple: #a855f7;
+  --accent-pink: #ec4899;
+  --accent-amber: #f59e0b;
+  --accent-emerald: #10b981;
+  
+  /* Global Gradient Background */
+  --bg-gradient-dark: radial-gradient(circle at 50% 50%, #17192d 0%, #07080e 100%);
+  --bg-gradient-light: radial-gradient(circle at 50% 50%, #eef2ff 0%, #f8fafc 100%);
+}
+
+/* Custom Scrollbar for smooth scroll */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+body {
+  font-family: var(--font-sans) !important;
+  background-image: var(--bg-gradient-dark);
+  background-attachment: fixed;
+  background-size: cover;
+  min-height: 100vh;
+  color: #f8fafc;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Force light theme colors override when light mode is selected */
+@media (prefers-color-scheme: light) {
+  body {
+    background-image: var(--bg-gradient-light);
+    color: #0f172a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Premium Glassmorphism for Bootstrap Cards */
+.card-glass {
+  background: rgba(20, 22, 39, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 18px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden;
+}
+
+@media (prefers-color-scheme: light) {
+  .card-glass {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.08) !important;
+  }
+}
+
+.card-glass:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.25) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+@media (prefers-color-scheme: light) {
+  .card-glass:hover {
+    box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.12) !important;
+    border-color: rgba(99, 102, 241, 0.2) !important;
+  }
+}
+
+/* Header Brand Gradient */
+.brand-gradient {
+  background: linear-gradient(135deg, #ffffff 30%, #a855f7 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 850;
+  letter-spacing: -1px;
+}
+
+@media (prefers-color-scheme: light) {
+  .brand-gradient {
+    background: linear-gradient(135deg, #1e293b 30%, #6366f1 90%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* Top-border accent lines */
+.card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--accent-indigo);
+  opacity: 0.85;
+}
+
+.card-glass.color-0::before { background: var(--accent-indigo); }
+.card-glass.color-1::before { background: var(--accent-purple); }
+.card-glass.color-2::before { background: var(--accent-pink); }
+.card-glass.color-3::before { background: var(--accent-amber); }
+.card-glass.color-4::before { background: var(--accent-emerald); }
+
+/* Pulse animation for editing card */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.3) !important;
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.5), inset 0 0 10px rgba(99, 102, 241, 0.15);
+    border-color: var(--accent-indigo) !important;
+  }
+}
+
+.card-glass.editing {
+  animation: neonPulse 2s infinite ease-in-out;
+  transform: translateY(-2px);
+}
+
+/* Input Styles override */
+.form-glass {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  backdrop-filter: blur(4px);
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+@media (prefers-color-scheme: light) {
+  .form-glass {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+  }
+}
+
+.form-glass:focus {
+  background: rgba(99, 102, 241, 0.05) !important;
+  border-color: var(--accent-indigo) !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Animations */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-card {
+  animation: cardEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

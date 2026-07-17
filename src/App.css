@@ -1,0 +1,24 @@
+/* App.css - Customized settings specifically for App.jsx layout override (using Bootstrap classes now) */
+
+.memo-textarea {
+  min-height: 120px;
+  resize: none;
+}
+
+.empty-icon-pulse {
+  animation: neonPulse 3s infinite ease-in-out;
+}
+
+.card-title-input {
+  border: none !important;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  border-radius: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  .card-title-input {
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1) !important;
+  }
+}
